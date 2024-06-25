@@ -2,43 +2,17 @@ const e = require('express');
 const openAiModel = require('../Models/OpenAiModel')
 const pdf = require('pdf-parse');
 
-const extractQuestionsAnswers = (text) => {
-    try{
-        const questionPattern = /.*?\?/g
-        const answerPattern = /(ans\))\s*(.*?)(?=(\s*\d+\.|$))/gi
-
-        const questions = text.match(questionPattern);
-        console.log("Questions:");
-        if (questions) {
-            questions.forEach(question => {
-                console.log(question.trim());
-            });
-        }
-
-        const answers = [];
-        let match;
-        while ((match = answerPattern.exec(text)) !== null) {
-            answers.push(match[2]);
-        }
-
-        console.log("\nAnswers:");
-        answers.forEach(answer => {
-            console.log('answer :',answer.trim());
-        });
-        
-    }
-    catch(error){
-        throw error
-    }
-}
 
 exports.checkAnswers = async(req, res) => {
     try{
         const dataBuffer = req.file.buffer;
         const data = await pdf(dataBuffer);
         let text = data.text;
+        text = text.replace(/(\r\n|\n|\r)/gm, ' ')
 
-        const qaPattern = /Q\d+\.\s*(.*?)\s+ANS\)\s*(.*)/gs
+
+        // const qaPattern = /(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-])\s*(.*?)\s+(?:ANS\)|ANS:|ANSWER\)|ANSWER:|ANSWERS\)|ANSWERS:|ans:|ans\)|ANS-|ans-|ANS |ans )\s*([\s\S]*?)(?=(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-]|$))/gi;
+        const qaPattern = /(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-])\s*(.*?)\s+(?:ANS(?:WER)?[):\-\s]*)\s*([\s\S]*?)(?=(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-]|$))/gi;
         const questionAnswerPairs = [];
 
         let match;
@@ -47,6 +21,7 @@ exports.checkAnswers = async(req, res) => {
             const answer = match[2].trim();
             questionAnswerPairs.push({ question, answer });
         }
+        console.log('match :', questionAnswerPairs)
 
         console.log("Question and Answer Pairs:");
         questionAnswerPairs.forEach((pair, index) => {
