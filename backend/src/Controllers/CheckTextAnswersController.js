@@ -22,17 +22,16 @@ exports.checkAnswers = async (req, res) => {
           })
 
         const isCorrect =  completion.choices[0].message.content.trim().toLowerCase().includes('yes')
-        console.log('iscorrect :', completion.choices[0].message.content.trim())
-        console.log('content :', completion.choices[0].message.content)
-        console.log('message :', completion.choices[0].message)
-        console.log('choices[0] :', completion.choices[0])
-        console.log('chices :', completion.choices)
-
+        if(!isCorrect){
+            return res.status(500).json({
+                error : 'Internal server error',
+                detail : error.message
+            })
+        }
         return res.status(200).json({Correct : isCorrect})
         
     }
     catch(error){
-        console.log('Error checking answers : ', error)
         return res.status(500).json({
             error : 'Internal server error',
             detail : error.message
