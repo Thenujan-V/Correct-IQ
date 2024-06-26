@@ -2,6 +2,31 @@ const e = require('express');
 const openAiModel = require('../Models/OpenAiModel')
 const pdf = require('pdf-parse');
 
+const sendPairToOpenAi = async(pair, index) => {
+    try{
+        const result = await openAiModel.gptCheck(pair)
+        if(result === null){
+            return {
+                status : 404,
+                json : {
+                    error : "Result not found"
+                }
+            }
+        }
+        return {
+            status : 200,
+            json : {
+                Question : `Q${index + 1}: ${pair.question}`,
+                Answer : `Answer: ${pair.answer}`,
+                Status : result
+            }
+        }
+    }
+    catch(error){
+        throw error
+    }
+}
+
 
 exports.checkAnswers = async(req, res) => {
     try{
@@ -11,7 +36,6 @@ exports.checkAnswers = async(req, res) => {
         text = text.replace(/(\r\n|\n|\r)/gm, ' ')
 
 
-        // const qaPattern = /(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-])\s*(.*?)\s+(?:ANS\)|ANS:|ANSWER\)|ANSWER:|ANSWERS\)|ANSWERS:|ans:|ans\)|ANS-|ans-|ANS |ans )\s*([\s\S]*?)(?=(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-]|$))/gi;
         const qaPattern = /(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-])\s*(.*?)\s+(?:ANS(?:WER)?[):\-\s]*)\s*([\s\S]*?)(?=(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-]|$))/gi;
         const questionAnswerPairs = [];
 
@@ -21,17 +45,21 @@ exports.checkAnswers = async(req, res) => {
             const answer = match[2].trim();
             questionAnswerPairs.push({ question, answer });
         }
-        console.log('match :', questionAnswerPairs)
 
         console.log("Question and Answer Pairs:");
-        questionAnswerPairs.forEach((pair, index) => {
-            console.log(`Q${index + 1}: ${pair.question}`);
-            console.log(`ANS: ${pair.answer}\n`);
-        });
+        const resultSet = []
+        for(let i = 0; i < questionAnswerPairs.length; i++){
+            console.log(`Q${i + 1}: ${questionAnswerPairs[i].question}`);
+            console.log(`ANS: ${questionAnswerPairs[i].answer}\n`);
 
-        return res.status(200).json({Correct : text})
+            const result = await sendPairToOpenAi(questionAnswerPairs[i], i)
+            resultSet.push(result)
+        }
+
+        return res.status(200).send({resultSet})
     }
     catch(error){
+        console.log('error :', error)
         return res.status(500).json({
             error : "Internal Server Error",
             detail : error.message
