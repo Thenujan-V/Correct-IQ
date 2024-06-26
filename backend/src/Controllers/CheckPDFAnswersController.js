@@ -1,4 +1,4 @@
-const e = require('express');
+const express = require('express');
 const openAiModel = require('../Models/OpenAiModel')
 const pdf = require('pdf-parse');
 
@@ -14,12 +14,9 @@ const sendPairToOpenAi = async(pair, index) => {
             }
         }
         return {
-            status : 200,
-            json : {
                 Question : `Q${index + 1}: ${pair.question}`,
                 Answer : `Answer: ${pair.answer}`,
                 Status : result
-            }
         }
     }
     catch(error){
@@ -30,15 +27,18 @@ const sendPairToOpenAi = async(pair, index) => {
 
 exports.checkAnswers = async(req, res) => {
     try{
+        if (!req.file || !req.file.buffer) {
+            throw new Error('No file uploaded or file is empty');
+        }
+
         const dataBuffer = req.file.buffer;
         const data = await pdf(dataBuffer);
         let text = data.text;
         text = text.replace(/(\r\n|\n|\r)/gm, ' ')
 
 
-        const qaPattern = /(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-])\s*(.*?)\s+(?:ANS(?:WER)?[):\-\s]*)\s*([\s\S]*?)(?=(?:[Qq]\d+[\.\)\-]|\d+[\.\)\-]|$))/gi;
+        const qaPattern = /(?:[Qq]\d+[\.\)\-]|[IVXLCDMivxlcdm]+\.[\)\-]|\d+[\.\)\-])\s*(.*?)\s*\?\s*([\s\S]*?)(?=(?:[Qq]\d+[\.\)\-]|[IVXLCDMivxlcdm]+\.[\)\-]|\d+[\.\)\-]|$))/gi;
         const questionAnswerPairs = [];
-
         let match;
         while ((match = qaPattern.exec(text)) !== null) {
             const question = match[1].trim();
@@ -53,13 +53,13 @@ exports.checkAnswers = async(req, res) => {
             console.log(`ANS: ${questionAnswerPairs[i].answer}\n`);
 
             const result = await sendPairToOpenAi(questionAnswerPairs[i], i)
-            resultSet.push(result)
+            resultSet.push(result)   
         }
 
         return res.status(200).send({resultSet})
+        // return res.status(200).send({text})
     }
     catch(error){
-        console.log('error :', error)
         return res.status(500).json({
             error : "Internal Server Error",
             detail : error.message

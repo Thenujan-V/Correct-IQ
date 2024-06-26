@@ -18,13 +18,12 @@ openai.gptCheck = async(dataToCheck, res) => {
           })
 
         const isCorrect =  completion.choices[0].message.content.trim().toLowerCase().includes('yes')
-        console.log('iscorrce :', isCorrect)
-        if(isCorrect === null){
+        if(isCorrect === 'undefined'){
             return res.status(500).json({
                 error : 'Internal server error',
-                detail : error.message
+                detail: 'isCorrect is not defined'
             })
-        }        
+        }           
         return isCorrect
     }
     catch(error){
