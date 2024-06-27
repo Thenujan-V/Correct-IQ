@@ -31,4 +31,28 @@ openai.gptCheck = async(dataToCheck, res) => {
     }
 }
 
+openai.gptGetQuetionsAndAnswers = async(text, res) => {
+    try{
+        const prompt = `Extract all questions and answers from the following text ${text}. Then, Provide the results in the format "QUESTION: [question] - ANSWER: [answer]".`
+        const completion = await openai.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "gpt-3.5-turbo-16k",
+          })
+
+        const isCorrect =  completion.choices[0].message.content.trim()
+        if(isCorrect === 'undefined'){
+            return res.status(500).json({
+                error : 'Internal server error',
+                detail: 'isCorrect is not defined'
+            })
+        }           
+        return isCorrect
+    }
+    catch(error){
+        throw error
+    }
+}
+
+
+
 module.exports = openai

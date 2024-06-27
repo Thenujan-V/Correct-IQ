@@ -8,6 +8,7 @@ const upload = multer();
 const checkPDFAnswersController = require('../Controllers/CheckPDFAnswersController')
 
 router.post('/check-answers', upload.single('file'), checkPDFAnswersController.checkAnswers)
+router.post('/check-unformat-pdf', upload.single('file'), checkPDFAnswersController.unFormatePDFCheck)
 
 
 
