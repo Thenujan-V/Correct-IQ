@@ -23,7 +23,7 @@ openai.gptCheck = async(dataToCheck, res) => {
                 error : 'Internal server error',
                 detail: 'isCorrect is not defined'
             })
-        }           
+        }      
         return isCorrect
     }
     catch(error){
