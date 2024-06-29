@@ -32,6 +32,7 @@ openai.gptCheck = async(dataToCheck, res) => {
 }
 
 openai.gptGetQuetionsAndAnswers = async(text, res) => {
+    console.log('text :', text)
     try{
         const prompt = `Extract all questions and answers from the following text ${text}. Then, Provide the results in the format "QUESTION: [question] - ANSWER: [answer]".`
         const completion = await openai.chat.completions.create({
@@ -45,7 +46,9 @@ openai.gptGetQuetionsAndAnswers = async(text, res) => {
                 error : 'Internal server error',
                 detail: 'isCorrect is not defined'
             })
-        }           
+        }   
+    console.log('isCorrect :', isCorrect)
+
         return isCorrect
     }
     catch(error){

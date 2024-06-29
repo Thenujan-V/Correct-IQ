@@ -68,15 +68,11 @@ exports.checkAnswers = async(req, res) => {
         console.log("Question and Answer Pairs:");
         const resultSet = []
         for(let i = 0; i < questionAnswerPairs.length; i++){
-            // console.log(`Q${i + 1}: ${questionAnswerPairs[i].question}`);
-            // console.log(`ANS: ${questionAnswerPairs[i].answer}\n`);
-
-            const result = await sendPairToOpenAi(questionAnswerPairs[i], i)
-            resultSet.push(result)   
+            // const result = await sendPairToOpenAi(questionAnswerPairs[i], i)
+            // resultSet.push(result)   
         }
 
-        return res.status(200).send({resultSet})
-        // return res.status(200).send({text})
+        return res.status(200).send({questionAnswerPairs})
     }
     catch(error){
         return res.status(500).json({
@@ -97,8 +93,7 @@ exports.unFormatePDFCheck = async (req, res) => {
         text = text.replace(/(\r\n|\n|\r)/gm, ' ')
 
         const result = await openAiModel.gptGetQuetionsAndAnswers(text)
-    	// console.log("result : ",result)
-
+        console.log('result :', result)
         const extractResult = extractQuestionsAnswers(result)
         const resultSet = []
 
