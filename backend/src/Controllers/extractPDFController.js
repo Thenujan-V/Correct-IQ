@@ -26,32 +26,51 @@ const extractTextsFromPDF = async(file) => {
     }
 }
 
-// Function to extract structured questions
+const cleanText = (text) => text.replace(/\s+/g, ' ').trim();
+
 const extractStructuredQuestions = (text) => {
-    const questionPattern = /^[0-9a-zA-Z]+\.+.*?(?=(^[0-9a-zA-Z]+\.\s+|$))/gms;
-    const subQuestionPattern = /^[a-c]\.\s+.*?(?=(^[a-c]\.\s+|^[0-9a-zA-Z]+\.\s+|$))/gms;
+   // Regex for main questions (numbers or alphabets followed by a period)
+   // Regex for main questions (any identifier followed by a period)
+   const mainQuestionPattern = /^\s*([a-zA-Z0-9]+)\.*(.+?)(?=\n\s*([a-zA-Z0-9]+)\.|\n*$)/gms;
+
+   // Regex for sub-questions (based on the main question identifier type)
+   const subQuestionPattern = (identifier) => {
+       const isAlpha = /^[a-zA-Z]+$/.test(identifier);
+       return new RegExp(`^\\s*(${isAlpha ? '\\d+' : '[a-zA-Z]'})\\.\\s*(.+)$`, 'gm');
+   };
 
     let questions = [];
-    let match;
+    let mainMatch;
 
-    // Match main questions and headings
-    while ((match = questionPattern.exec(text)) !== null) {
-        console.log(match[0])
-        const questionText = match[0];
-        const subMatches = questionText.match(subQuestionPattern);
-        let question = {
-            main: questionText.split('\n')[0].trim(),
-            subQuestions: subMatches ? subMatches.map(sub => sub.trim()) : []
-        };
-        questions.push(question);
+    while ((mainMatch = mainQuestionPattern.exec(text)) !== null) {
+        console.log('mainMatch',mainMatch)
+        const mainQuestionIdentifier = cleanText(mainMatch[1]);
+        const mainQuestionText = cleanText(mainMatch[0]);
+        console.log('mainQuestionIdentifier',mainQuestionIdentifier)
+        console.log('mainQuestionText',mainQuestionText)
+
+        let mainQuestion = { main: mainQuestionText, subQuestions: [] };
+
+        let subMatch;
+        const subPattern = subQuestionPattern(mainQuestionIdentifier);
+        const subText = text.substring(mainMatch.index + mainMatch[0].length, mainQuestionPattern.lastIndex);
+        console.log('subPattern',subPattern)
+        console.log('subText',subText)
+        console.log(mainMatch.index + mainMatch[0].length)
+        console.log(mainQuestionPattern.lastIndex)
+
+
+        while ((subMatch = subPattern.exec(subText)) !== null) {
+            const subQuestionText = cleanText(subMatch[2]);
+            mainQuestion.subQuestions.push(subQuestionText);
+        console.log('subText',subQuestionText)
+        }
+
+        questions.push(mainQuestion);
     }
 
-    // Clean up uploaded file
-    // fs.unlinkSync(path.join(__dirname, req.file.path));
-
-    return questions
+    return questions;
 };
-
 
 exports.extractPDF = async (req, res) => {
     try{
