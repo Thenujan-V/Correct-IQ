@@ -26,10 +26,24 @@ const extractTextsFromPDF = async(file) => {
     }
 }
 
+function checkMainQuestionIdentifier(mainQuestionIdentifier) {
+    const containsNumbers = /\d/.test(mainQuestionIdentifier);
+    const containsAlphabets = /[a-zA-Z]/.test(mainQuestionIdentifier);
+
+    if (containsNumbers && containsAlphabets) {
+        return "The string contains both numbers and alphabets.";
+    } else if (containsNumbers) {
+        return "The string contains numbers.";
+    } else if (containsAlphabets) {
+        return "The string contains alphabets.";
+    } else {
+        return "The string does not contain numbers or alphabets.";
+    }
+}
+
 const cleanText = (text) => text.replace(/\s+/g, ' ').trim();
 
 const extractStructuredQuestions = (text) => {
-   // Regex for main questions (numbers or alphabets followed by a period)
    // Regex for main questions (any identifier followed by a period)
    const mainQuestionPattern = /^\s*([a-zA-Z0-9]+)\.*(.+?)(?=\n\s*([a-zA-Z0-9]+)\.|\n*$)/gms;
 
@@ -41,6 +55,8 @@ const extractStructuredQuestions = (text) => {
 
     let questions = [];
     let mainMatch;
+    let previousQuestionIdentifierType
+    let subQuestionIdentifierType
 
     while ((mainMatch = mainQuestionPattern.exec(text)) !== null) {
         console.log('mainMatch',mainMatch)
@@ -51,20 +67,42 @@ const extractStructuredQuestions = (text) => {
 
         let mainQuestion = { main: mainQuestionText, subQuestions: [] };
 
-        let subMatch;
-        const subPattern = subQuestionPattern(mainQuestionIdentifier);
-        const subText = text.substring(mainMatch.index + mainMatch[0].length, mainQuestionPattern.lastIndex);
-        console.log('subPattern',subPattern)
-        console.log('subText',subText)
-        console.log(mainMatch.index + mainMatch[0].length)
-        console.log(mainQuestionPattern.lastIndex)
+        if(questions.length > 1 && previousQuestionIdentifierType !== subQuestionIdentifierType){
+            console.log('type QM :',checkMainQuestionIdentifier(subQuestionIdentifierType))
+            console.log('type PQM :',previousQuestionIdentifierType)
+            const typeOfMainQuestionIdentifier = checkMainQuestionIdentifier(mainQuestionIdentifier)
+            if(typeOfMainQuestionIdentifier !== previousQuestionIdentifierType){
+                const subPattern = subQuestionPattern(mainQuestionIdentifier);
+                const subText = text.substring(mainMatch.index + mainMatch[0].length, );
 
-
-        while ((subMatch = subPattern.exec(subText)) !== null) {
-            const subQuestionText = cleanText(subMatch[2]);
-            mainQuestion.subQuestions.push(subQuestionText);
-        console.log('subText',subQuestionText)
+                while ((subMatch = subPattern.exec(subText)) !== null) {
+                    const subQuestionText = cleanText(subMatch[0]);
+                    const subQuestionIdentifier = cleanText(subMatch[1]);
+                    mainQuestion.subQuestions.push(subQuestionText);
+                    console.log('subText',subQuestionText)
+                    subQuestionIdentifierType = checkMainQuestionIdentifier(subQuestionIdentifier)
+                }
+            }
         }
+        previousQuestionIdentifierType = checkMainQuestionIdentifier(mainQuestionIdentifier)
+
+        // let subMatch;
+        // const subPattern = subQuestionPattern(mainQuestionIdentifier);
+        // const subText = text.substring(mainMatch.index + mainMatch[0].length, mainQuestionPattern.lastIndex);
+        // console.log('subPattern',subPattern)
+        // console.log('subText',subText)
+        // console.log(mainMatch.index + mainMatch[0].length)
+        // console.log(mainQuestionPattern.lastIndex)
+        // console.log('input :',mainMatch.input)
+        // console.log('input :',mainMatch.input[mainQuestionPattern.lastIndex])
+        // console.log('input:',mainMatch.input[mainMatch.index+4])
+
+
+        // while ((subMatch = subPattern.exec(subText)) !== null) {
+        //     const subQuestionText = cleanText(subMatch[2]);
+        //     mainQuestion.subQuestions.push(subQuestionText);
+        // console.log('subText',subQuestionText)
+        // }
 
         questions.push(mainQuestion);
     }
