@@ -56,6 +56,7 @@ const extractStructuredQuestions = (text) => {
     let questions = [];
     let mainMatch;
     let previousQuestionIdentifierType
+    let previousQuestionIdentifier
     let subQuestionIdentifierType
 
     while ((mainMatch = mainQuestionPattern.exec(text)) !== null) {
@@ -65,46 +66,48 @@ const extractStructuredQuestions = (text) => {
         console.log('mainQuestionIdentifier',mainQuestionIdentifier)
         console.log('mainQuestionText',mainQuestionText)
 
-        let mainQuestion = { main: mainQuestionText, subQuestions: [] };
+        console.log('previousQuestionIdentifierType ',previousQuestionIdentifierType )
+        console.log('subQuestionIdentifierType ',checkMainQuestionIdentifier(mainQuestionIdentifier) )
 
-        if(questions.length > 1 && previousQuestionIdentifierType !== subQuestionIdentifierType){
-            console.log('type QM :',checkMainQuestionIdentifier(subQuestionIdentifierType))
+        let mainQuestion= { main: '', subQuestions: [] }
+        
+        if(questions.length === 0){
+            let mainQuestion= { main: mainQuestionText, subQuestions: [] }
+            questions.push(mainQuestion)
+        }
+        if(previousQuestionIdentifierType === checkMainQuestionIdentifier(mainQuestionIdentifier)){
+            mainQuestion = { main: mainQuestionText, subQuestions: [] }
+            questions.push(mainQuestion)
+        }
+
+        if(previousQuestionIdentifierType !== checkMainQuestionIdentifier(mainQuestionIdentifier) ){
+            console.log('type QM :',subQuestionIdentifierType)
             console.log('type PQM :',previousQuestionIdentifierType)
+
+            const lengthOfQuestions = questions.length
+            questions[lengthOfQuestions-1].subQuestions.push(mainQuestionText)
+            // questions[lengthOfQuestions-1] = mainQuestion
+            
+
             const typeOfMainQuestionIdentifier = checkMainQuestionIdentifier(mainQuestionIdentifier)
+
             if(typeOfMainQuestionIdentifier !== previousQuestionIdentifierType){
-                const subPattern = subQuestionPattern(mainQuestionIdentifier);
-                const subText = text.substring(mainMatch.index + mainMatch[0].length, );
+                const subPattern = subQuestionPattern(previousQuestionIdentifier)
+                const subText = text.substring(mainMatch.index + mainMatch[0].length, )
+                console.log('subText',subText)
 
                 while ((subMatch = subPattern.exec(subText)) !== null) {
                     const subQuestionText = cleanText(subMatch[0]);
                     const subQuestionIdentifier = cleanText(subMatch[1]);
-                    mainQuestion.subQuestions.push(subQuestionText);
-                    console.log('subText',subQuestionText)
+                    mainQuestion.subQuestions.push(subQuestionText)
+                    console.log('subQuestionText',subQuestionText)
                     subQuestionIdentifierType = checkMainQuestionIdentifier(subQuestionIdentifier)
                 }
             }
         }
+        previousQuestionIdentifier = cleanText(mainMatch[1])
         previousQuestionIdentifierType = checkMainQuestionIdentifier(mainQuestionIdentifier)
 
-        // let subMatch;
-        // const subPattern = subQuestionPattern(mainQuestionIdentifier);
-        // const subText = text.substring(mainMatch.index + mainMatch[0].length, mainQuestionPattern.lastIndex);
-        // console.log('subPattern',subPattern)
-        // console.log('subText',subText)
-        // console.log(mainMatch.index + mainMatch[0].length)
-        // console.log(mainQuestionPattern.lastIndex)
-        // console.log('input :',mainMatch.input)
-        // console.log('input :',mainMatch.input[mainQuestionPattern.lastIndex])
-        // console.log('input:',mainMatch.input[mainMatch.index+4])
-
-
-        // while ((subMatch = subPattern.exec(subText)) !== null) {
-        //     const subQuestionText = cleanText(subMatch[2]);
-        //     mainQuestion.subQuestions.push(subQuestionText);
-        // console.log('subText',subQuestionText)
-        // }
-
-        questions.push(mainQuestion);
     }
 
     return questions;
