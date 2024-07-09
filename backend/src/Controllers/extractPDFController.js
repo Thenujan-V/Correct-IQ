@@ -50,7 +50,7 @@ const extractStructuredQuestions = (text) => {
    // Regex for sub-questions (based on the main question identifier type)
    const subQuestionPattern = (identifier) => {
        const isAlpha = /^[a-zA-Z]+$/.test(identifier);
-       return new RegExp(`^\\s*(${isAlpha ? '\\d+' : '[a-zA-Z]'})\\.\\s*(.+)$`, 'gm');
+       return new RegExp(`^\\s*(${isAlpha ? '\\d+' : '[a-zA-Z0-9]'})\\.\\s*(.+)$`, 'gm');
    };
 
     let questions = [];
@@ -58,34 +58,47 @@ const extractStructuredQuestions = (text) => {
     let previousQuestionIdentifierType
     let previousQuestionIdentifier
     let subQuestionIdentifierType
+    let mainQuestionIdentifier
+    let mainQuestionText
 
     while ((mainMatch = mainQuestionPattern.exec(text)) !== null) {
+        mainQuestionIdentifier = cleanText(mainMatch[1]);
+        mainQuestionText = cleanText(mainMatch[0]);
+
+        console.log('subQuestionIdentifierType :', subQuestionIdentifierType)
+
         console.log('mainMatch',mainMatch)
-        const mainQuestionIdentifier = cleanText(mainMatch[1]);
-        const mainQuestionText = cleanText(mainMatch[0]);
         console.log('mainQuestionIdentifier',mainQuestionIdentifier)
         console.log('mainQuestionText',mainQuestionText)
 
-        console.log('previousQuestionIdentifierType ',previousQuestionIdentifierType )
-        console.log('subQuestionIdentifierType ',checkMainQuestionIdentifier(mainQuestionIdentifier) )
+        // console.log('subQuestionIdentifierType ',checkMainQuestionIdentifier(mainQuestionIdentifier) )
+        console.log('MainQuestionIdentifierType :', checkMainQuestionIdentifier(mainQuestionIdentifier))
 
         let mainQuestion= { main: '', subQuestions: [] }
-        
+        if(checkMainQuestionIdentifier(mainQuestionIdentifier) === subQuestionIdentifierType && subQuestionIdentifierType !== undefined){
+            continue
+        }
         if(questions.length === 0){
+            mainQuestionText = cleanText(mainMatch[0]);
             let mainQuestion= { main: mainQuestionText, subQuestions: [] }
             questions.push(mainQuestion)
         }
         if(previousQuestionIdentifierType === checkMainQuestionIdentifier(mainQuestionIdentifier)){
+            mainQuestionIdentifier = cleanText(mainMatch[1]);
+            subFirstQuestionText = cleanText(mainMatch[0]);
             mainQuestion = { main: mainQuestionText, subQuestions: [] }
             questions.push(mainQuestion)
         }
 
-        if(previousQuestionIdentifierType !== checkMainQuestionIdentifier(mainQuestionIdentifier) ){
-            console.log('type QM :',subQuestionIdentifierType)
+        if(previousQuestionIdentifierType !== checkMainQuestionIdentifier(mainQuestionIdentifier) && previousQuestionIdentifierType !== undefined){
+            console.log('type QM :',checkMainQuestionIdentifier(mainQuestionIdentifier))
             console.log('type PQM :',previousQuestionIdentifierType)
 
             const lengthOfQuestions = questions.length
-            questions[lengthOfQuestions-1].subQuestions.push(mainQuestionText)
+            if(questions[lengthOfQuestions-1].subQuestions.length === 0){
+                questions[lengthOfQuestions-1].subQuestions.push(mainQuestionText)
+            }
+            // questions[lengthOfQuestions-1].subQuestions.push(subFirstQuestionText)
             // questions[lengthOfQuestions-1] = mainQuestion
             
 
@@ -97,16 +110,27 @@ const extractStructuredQuestions = (text) => {
                 console.log('subText',subText)
 
                 while ((subMatch = subPattern.exec(subText)) !== null) {
-                    const subQuestionText = cleanText(subMatch[0]);
-                    const subQuestionIdentifier = cleanText(subMatch[1]);
-                    mainQuestion.subQuestions.push(subQuestionText)
-                    console.log('subQuestionText',subQuestionText)
-                    subQuestionIdentifierType = checkMainQuestionIdentifier(subQuestionIdentifier)
+                    const subQuestionIdentifier = cleanText(subMatch[1])
+                    // subQuestionIdentifierType = checkMainQuestionIdentifier(subQuestionIdentifier)
+                    console.log('typeOfMainQuestionIdentifier ',typeOfMainQuestionIdentifier)
+
+                    if(typeOfMainQuestionIdentifier === checkMainQuestionIdentifier(subQuestionIdentifier)){
+                        const subQuestionText = cleanText(subMatch[0]);
+                        subQuestionIdentifierType = checkMainQuestionIdentifier(subQuestionIdentifier)
+                        console.log('subQuestionText',subQuestionText)
+                        questions[lengthOfQuestions-1].subQuestions.push(subQuestionText)
+                    }
+                    else{
+                        break
+                    }
+                    console.log('subQuestionIdentifierType ',subQuestionIdentifierType )
+
                 }
             }
         }
         previousQuestionIdentifier = cleanText(mainMatch[1])
         previousQuestionIdentifierType = checkMainQuestionIdentifier(mainQuestionIdentifier)
+        console.log('previousQuestionIdentifierType ',previousQuestionIdentifierType )
 
     }
 
