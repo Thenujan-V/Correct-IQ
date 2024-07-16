@@ -28,16 +28,29 @@ const extractTextsFromPDF = async(file) => {
 
 function checkMainQuestionIdentifier(mainQuestionIdentifier) {
     const containsNumbers = /\d/.test(mainQuestionIdentifier);
-    const containsAlphabets = /[a-zA-Z]/.test(mainQuestionIdentifier);
+    const containsSmallLetters = /[a-z]/.test(mainQuestionIdentifier);
+    const containsBlockLetters = /[A-Z]/.test(mainQuestionIdentifier);
+    const romanNumeralPattern = /^(?=[MDCLXVI])M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$/;
+    const containsRomanNumerals = romanNumeralPattern.test(mainQuestionIdentifier);
 
-    if (containsNumbers && containsAlphabets) {
-        return "The string contains both numbers and alphabets.";
+    if (containsNumbers && containsSmallLetters && containsBlockLetters) {
+        return "The string contains numbers, small letters, and block letters.";
+    } else if (containsNumbers && containsSmallLetters) {
+        return "The string contains numbers and small letters.";
+    } else if (containsNumbers && containsBlockLetters) {
+        return "The string contains numbers and block letters.";
+    } else if (containsSmallLetters && containsBlockLetters) {
+        return "The string contains small letters and block letters.";
     } else if (containsNumbers) {
         return "The string contains numbers.";
-    } else if (containsAlphabets) {
-        return "The string contains alphabets.";
+    } else if (containsSmallLetters) {
+        return "The string contains small letters.";
+    } else if (containsBlockLetters) {
+        return "The string contains block letters.";
+    } else if (containsRomanNumerals) {
+        return "The string contains Roman numerals.";
     } else {
-        return "The string does not contain numbers or alphabets.";
+        return "The string does not contain numbers, letters, or Roman numerals.";
     }
 }
 
@@ -87,6 +100,7 @@ const extractStructuredQuestions = (text) => {
         let firstMainQuestionIdentfierType
         let QuestionWithSubQuestions = []
         let QuestionIdentfierType
+        let lastIndex
 
         while(mainQuestions[index] !== undefined){            
             const mainQuestionsMatches = [...mainQuestions[index].matchAll(regex)]
@@ -94,32 +108,45 @@ const extractStructuredQuestions = (text) => {
 
             firstMainQuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
 
-            QuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
-
             const questions = mainQuestionsMatches.map(match => match[0].trim())
             // console.log('question :', questions)
-            if(firstMainQuestionIdentfierType === QuestionIdentfierType){
-                // QuestionWithSubQuestions[index].push({
-                //     mainQuestion : questions
-                // })
-            console.log('ques :', questions) 
+            // console.log('firstMainQuestionIdentfierType :', firstMainQuestionIdentfierType)
+             
+            let questionIndex = 0
+
+            while(questions[questionIndex] !== undefined){
+                const subQuestionsMatches = [...questions[questionIndex].matchAll(regex)]
+                QuestionIdentfierType = checkMainQuestionIdentifier(subQuestionsMatches[0][1])
+                // console.log('QuestionIdentfierType :', QuestionIdentfierType)
+                // console.log('subQuestionsMatches :', subQuestionsMatches)
+                if(firstMainQuestionIdentfierType === QuestionIdentfierType){
+                    QuestionWithSubQuestions[index] = {
+                        mainQuestion : subQuestionsMatches[0][0],
+                        subQuestions : []
+                    }
+                    lastIndex = index
+                    // console.log('mainques :', subQuestionsMatches[0][0]) 
+                }
+                else{
+                    // console.log('subquess :', subQuestionsMatches[0][0]) 
+                    QuestionWithSubQuestions[lastIndex].subQuestions.push(subQuestionsMatches[0][0])
+                    // extractSubQuestions(subQuestionsMatches[0][0])
+                }
+                questionIndex++
 
             }
-            else{
-            console.log('quess :', questions) 
-
-                // QuestionWithSubQuestions[index].subQuestions = questions 
-            }
-            
             index++
-            // console.log('index :', index) 
 
         }
+        // console.log('QuestionWithSubQuestions :', QuestionWithSubQuestions)
+        return QuestionWithSubQuestions
     }
 
     const subQuestions = extractSubQuestions(mainQuestions)
+    return subQuestions
 
 }
+
 
 exports.extractPDF = async (req, res) => {
     try{
@@ -133,6 +160,7 @@ exports.extractPDF = async (req, res) => {
             const extractAnswers = await extractTextsFromPDF(answersFile)
 
             const questionMatches = extractStructuredQuestions(extractQuestions)
+
 
 
             return res.status(200).json({
