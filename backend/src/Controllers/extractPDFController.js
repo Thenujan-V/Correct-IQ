@@ -11,7 +11,7 @@ const extractTextsFromPDF = async(file) => {
             const dataBuffer = file.buffer
             const data = await pdf(dataBuffer)
             let text = data.text
-            // text = text.replace(/(\r\n|\n|\r)/gm, ' ')
+            text = text.replace(/(\r\n|\n|\r)/gm, ' ')
 
             return text
         }
@@ -42,100 +42,84 @@ function checkMainQuestionIdentifier(mainQuestionIdentifier) {
 }
 
 const cleanText = (text) => text.replace(/\s+/g, ' ').trim();
+let mainQuestionIdentfierType
+let index = 0
+let extractQuestionsFromText = []
+let mainQuestionNumber
 
 const extractStructuredQuestions = (text) => {
-   // Regex for main questions (any identifier followed by a period)
-   const mainQuestionPattern = /^\s*([a-zA-Z0-9]+)\.*(.+?)(?=\n\s*([a-zA-Z0-9]+)\.|\n*$)/gms;
+    const regex = /(\d+|[a-zA-Z])[\.\-\)]\s*(.*?)(?=\d+[\.\-\)]\s*|\b[a-zA-Z][\.\-\)]\s*|$)/gs;
 
-   // Regex for sub-questions (based on the main question identifier type)
-   const subQuestionPattern = (identifier) => {
-       const isAlpha = /^[a-zA-Z]+$/.test(identifier);
-       return new RegExp(`^\\s*(${isAlpha ? '\\d+' : '[a-zA-Z0-9]'})\\.\\s*(.+)$`, 'gm');
-   };
+    function extractMainQuestions(text) {
+        const matches = [...text.matchAll(regex)]
+        mainQuestionIdentfierType = checkMainQuestionIdentifier(matches[0][1])
 
-    let questions = [];
-    let mainMatch;
-    let previousQuestionIdentifierType
-    let previousQuestionIdentifier
-    let subQuestionIdentifierType
-    let mainQuestionIdentifier
-    let mainQuestionText
+        const questions = matches.map(match => match[0].trim())
+        // console.log('questions : ', questions)
 
-    while ((mainMatch = mainQuestionPattern.exec(text)) !== null) {
-        mainQuestionIdentifier = cleanText(mainMatch[1]);
-        mainQuestionText = cleanText(mainMatch[0]);
-
-        console.log('subQuestionIdentifierType :', subQuestionIdentifierType)
-
-        console.log('mainMatch',mainMatch)
-        console.log('mainQuestionIdentifier',mainQuestionIdentifier)
-        console.log('mainQuestionText',mainQuestionText)
-
-        // console.log('subQuestionIdentifierType ',checkMainQuestionIdentifier(mainQuestionIdentifier) )
-        console.log('MainQuestionIdentifierType :', checkMainQuestionIdentifier(mainQuestionIdentifier))
-
-        let mainQuestion= { main: '', subQuestions: [] }
-        if(checkMainQuestionIdentifier(mainQuestionIdentifier) === subQuestionIdentifierType && subQuestionIdentifierType !== undefined){
-            continue
-        }
-        if(questions.length === 0){
-            mainQuestionText = cleanText(mainMatch[0]);
-            let mainQuestion= { main: mainQuestionText, subQuestions: [] }
-            questions.push(mainQuestion)
-        }
-        if(previousQuestionIdentifierType === checkMainQuestionIdentifier(mainQuestionIdentifier)){
-            mainQuestionIdentifier = cleanText(mainMatch[1]);
-            subFirstQuestionText = cleanText(mainMatch[0]);
-            mainQuestion = { main: mainQuestionText, subQuestions: [] }
-            questions.push(mainQuestion)
-        }
-
-        if(previousQuestionIdentifierType !== checkMainQuestionIdentifier(mainQuestionIdentifier) && previousQuestionIdentifierType !== undefined){
-            console.log('type QM :',checkMainQuestionIdentifier(mainQuestionIdentifier))
-            console.log('type PQM :',previousQuestionIdentifierType)
-
-            const lengthOfQuestions = questions.length
-            if(questions[lengthOfQuestions-1].subQuestions.length === 0){
-                questions[lengthOfQuestions-1].subQuestions.push(mainQuestionText)
+        while(matches[index] !== undefined){
+            // console.log(matches[index][1])
+            const questionIdentifier = checkMainQuestionIdentifier(matches[index][1])
+            if(mainQuestionIdentfierType === questionIdentifier){
+                if(matches[index][0] !== null){
+                    extractQuestionsFromText[index] = matches[index][0]
+                }
+                // console.log('aaa :', extractQuestionsFromText[index])
+                mainQuestionNumber = index
             }
-            // questions[lengthOfQuestions-1].subQuestions.push(subFirstQuestionText)
-            // questions[lengthOfQuestions-1] = mainQuestion
-            
-
-            const typeOfMainQuestionIdentifier = checkMainQuestionIdentifier(mainQuestionIdentifier)
-
-            if(typeOfMainQuestionIdentifier !== previousQuestionIdentifierType){
-                const subPattern = subQuestionPattern(previousQuestionIdentifier)
-                const subText = text.substring(mainMatch.index + mainMatch[0].length, )
-                console.log('subText',subText)
-
-                while ((subMatch = subPattern.exec(subText)) !== null) {
-                    const subQuestionIdentifier = cleanText(subMatch[1])
-                    // subQuestionIdentifierType = checkMainQuestionIdentifier(subQuestionIdentifier)
-                    console.log('typeOfMainQuestionIdentifier ',typeOfMainQuestionIdentifier)
-
-                    if(typeOfMainQuestionIdentifier === checkMainQuestionIdentifier(subQuestionIdentifier)){
-                        const subQuestionText = cleanText(subMatch[0]);
-                        subQuestionIdentifierType = checkMainQuestionIdentifier(subQuestionIdentifier)
-                        console.log('subQuestionText',subQuestionText)
-                        questions[lengthOfQuestions-1].subQuestions.push(subQuestionText)
-                    }
-                    else{
-                        break
-                    }
-                    console.log('subQuestionIdentifierType ',subQuestionIdentifierType )
-
+            else{
+                if(matches[index][0] !== null){
+                    extractQuestionsFromText[mainQuestionNumber] += ' ' + matches[index][0] 
                 }
             }
+            
+            index++
         }
-        previousQuestionIdentifier = cleanText(mainMatch[1])
-        previousQuestionIdentifierType = checkMainQuestionIdentifier(mainQuestionIdentifier)
-        console.log('previousQuestionIdentifierType ',previousQuestionIdentifierType )
+        const newExtractQuestionsFromText = extractQuestionsFromText.filter(value => value !== null)
+        return newExtractQuestionsFromText
+    }
+    
+    const mainQuestions = extractMainQuestions(text)
+    // return mainQuestions
 
+    const extractSubQuestions = (mainQuestions) => {
+        let index = 0
+        let firstMainQuestionIdentfierType
+        let QuestionWithSubQuestions = []
+        let QuestionIdentfierType
+
+        while(mainQuestions[index] !== undefined){            
+            const mainQuestionsMatches = [...mainQuestions[index].matchAll(regex)]
+            // console.log('ques :', mainQuestionsMatches) 
+
+            firstMainQuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
+
+            QuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
+
+            const questions = mainQuestionsMatches.map(match => match[0].trim())
+            // console.log('question :', questions)
+            if(firstMainQuestionIdentfierType === QuestionIdentfierType){
+                // QuestionWithSubQuestions[index].push({
+                //     mainQuestion : questions
+                // })
+            console.log('ques :', questions) 
+
+            }
+            else{
+            console.log('quess :', questions) 
+
+                // QuestionWithSubQuestions[index].subQuestions = questions 
+            }
+            
+            index++
+            // console.log('index :', index) 
+
+        }
     }
 
-    return questions;
-};
+    const subQuestions = extractSubQuestions(mainQuestions)
+
+}
 
 exports.extractPDF = async (req, res) => {
     try{
