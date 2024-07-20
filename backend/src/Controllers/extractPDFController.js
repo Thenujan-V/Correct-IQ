@@ -101,40 +101,76 @@ const extractStructuredQuestions = (text) => {
         let QuestionWithSubQuestions = []
         let QuestionIdentfierType
         let lastIndex
+        
 
         while(mainQuestions[index] !== undefined){            
             const mainQuestionsMatches = [...mainQuestions[index].matchAll(regex)]
-            // console.log('ques :', mainQuestionsMatches) 
+            // console.log('Qi',mainQuestionsMatches)
+            // console.log('Qi',mainQuestionsMatches.length)
+            const mainQuestionLength = mainQuestionsMatches.length
+            if(mainQuestionLength === 1){
+                firstMainQuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
+                console.log('Q',mainQuestionsMatches[0][0])
 
-            firstMainQuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
-
-            const questions = mainQuestionsMatches.map(match => match[0].trim())
-            // console.log('question :', questions)
-            // console.log('firstMainQuestionIdentfierType :', firstMainQuestionIdentfierType)
-             
-            let questionIndex = 0
-
-            while(questions[questionIndex] !== undefined){
-                const subQuestionsMatches = [...questions[questionIndex].matchAll(regex)]
-                QuestionIdentfierType = checkMainQuestionIdentifier(subQuestionsMatches[0][1])
-                // console.log('QuestionIdentfierType :', QuestionIdentfierType)
-                // console.log('subQuestionsMatches :', subQuestionsMatches)
-                if(firstMainQuestionIdentfierType === QuestionIdentfierType){
                     QuestionWithSubQuestions[index] = {
-                        mainQuestion : subQuestionsMatches[0][0],
+                        mainQuestion : mainQuestionsMatches[0][0],
                         subQuestions : []
                     }
-                    lastIndex = index
-                    // console.log('mainques :', subQuestionsMatches[0][0]) 
                 }
-                else{
-                    // console.log('subquess :', subQuestionsMatches[0][0]) 
-                    QuestionWithSubQuestions[lastIndex].subQuestions.push(subQuestionsMatches[0][0])
-                    // extractSubQuestions(subQuestionsMatches[0][0])
-                }
-                questionIndex++
+            else{
 
-            }
+                console.log('Qs',mainQuestionsMatches)
+                
+                let i = 0
+                    while(i < mainQuestionLength){
+                        // console.log('length :', mainQuestionsMatches)
+                        QuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
+                        if(firstMainQuestionIdentfierType === QuestionIdentfierType){
+                            QuestionWithSubQuestions[index] = {
+                                mainQuestion : mainQuestionsMatches[0][0],
+                                subQuestions : []
+                            }
+                        }
+                        else{
+                            QuestionWithSubQuestions[index].subQuestions
+                        }
+                        i++
+                    }
+                }
+            
+
+                // console.log('Array :', QuestionWithSubQuestions)
+            // console.log('l :', mainQuestionsMatches.length)
+
+            // firstMainQuestionIdentfierType = checkMainQuestionIdentifier(mainQuestionsMatches[0][1])
+
+            // const questions = mainQuestionsMatches.map(match => match[0].trim())
+            // // console.log('question :', questions)
+            // // console.log('firstMainQuestionIdentfierType :', firstMainQuestionIdentfierType)
+             
+            // let questionIndex = 0
+
+            // while(questions[questionIndex] !== undefined){
+            //     const subQuestionsMatches = [...questions[questionIndex].matchAll(regex)]
+            //     QuestionIdentfierType = checkMainQuestionIdentifier(subQuestionsMatches[0][1])
+            //     // console.log('QuestionIdentfierType :', QuestionIdentfierType)
+            //     // console.log('subQuestionsMatches :', subQuestionsMatches)
+            //     if(firstMainQuestionIdentfierType === QuestionIdentfierType){
+            //         QuestionWithSubQuestions[index] = {
+            //             mainQuestion : subQuestionsMatches[0][0],
+            //             subQuestions : []
+            //         }
+            //         lastIndex = index
+            //         // console.log('mainques :', subQuestionsMatches[0][0]) 
+            //     }
+            //     else{
+            //         // console.log('subquess :', subQuestionsMatches[0][0]) 
+            //         QuestionWithSubQuestions[lastIndex].subQuestions.push(subQuestionsMatches[0][0])
+            //         // extractSubQuestions(subQuestionsMatches[0][0])
+            //     }
+            //     questionIndex++
+
+            // }
             index++
 
         }
@@ -144,6 +180,17 @@ const extractStructuredQuestions = (text) => {
 
     const subQuestions = extractSubQuestions(mainQuestions)
     return subQuestions
+    
+    // const extractAllQuestions = (mainQuestions) => {
+
+    // }
+
+
+
+    // const allQuestions = extractAllQuestions(mainQuestions)
+    // console.log('main Questions :',)
+    // return allQuestions
+
 
 }
 
